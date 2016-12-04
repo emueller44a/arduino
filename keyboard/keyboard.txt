@@ -5,6 +5,9 @@ pwd
 -> arduino/keyboard
 arduino &
 
+todo:
+fix bug
+
 
 description:
 - two laptops (control + playback)
