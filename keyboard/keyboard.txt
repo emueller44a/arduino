@@ -1,0 +1,26 @@
+description:
+- two laptops (control + playback)
+- playback laptops has dual boot environment (windows 10+ubuntu 16.04.1)
+- two sequences have to be implemented:
+- windows login:
+-- press CTRL+ALT+ENT
+-- type user
+-- type password
+-- wait 30 seconds
+-- press CTRL+ALT+ENT
+-- press TAB three times
+-- press ENTER
+- ubuntu login:
+-- todo
+
+
+
+example sketch:
+- sources:
+-- https://www.arduino.cc/en/Tutorial/KeyboardLogout
+
+ On Windows:
+ 
+ CTRL-ALT-DEL followed by ALT-l
+ On Debian:
+ CTRL-ALT-DEL, and ENTER
