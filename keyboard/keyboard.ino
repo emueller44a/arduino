@@ -1,11 +1,11 @@
 #include <SPI.h>
-#include <Dhcp.h>
+//#include <Dhcp.h>
 #include <Ethernet.h>
-#include <Dns.h>
-#include <EthernetServer.h>
-#include <util.h>
+//#include <Dns.h>
+//#include <EthernetServer.h>
+//#include <util.h>
 #include <EthernetUdp.h>
-#include <EthernetClient.h>
+//#include <EthernetClient.h>
 #include <EEPROM.h>
 
 /*
@@ -13,36 +13,43 @@
  *
  * author: muellere
  */
-const char version[] = "0.1";
-const char date[] = "20161203"; 
+const char version[] = "0.12";
+const char date[] = "20161204"; 
 
  /*
   * packet format
   * 
-  * PRESS_CMD
+  * WRITE_CMD
   * 2 bytes length
   * 0x01 <val>
   * value of variable 'val' will be used calling Keyboard.write(<val>)
   * 
-  * TYPE_CMD
-  * variable bytes length, at least 1 byte
-  * 0x01 <val_1> <val_2> ... <val_n>
-  * values of variables 'val_i' will be concatenated and terminated with 0x00
-  * resulting structure will be used calling Keyboard.println
+  * PRESS_CMD
+  * 2 bytes length
+  * 0x02 <val>
+  * value of variable 'val' will be used calling Keyboard.write(<val>)
+  * 
+  * RELEASE_ALL_CMD
+  * 1 byte length
+  * 0x03 <val>
+  * calling Keyboard.releaseAll();
   * 
   * CONFIG_CMD
   * 2 bytes length
-  * 0x01 <val>
+  * 0xFF <val>
   * value of variable 'val' containing new ip address will be stored in EEPROM 
   */
 
 
 
 const boolean debug = true;
+const boolean mute = true;
+const boolean greeting = true;
 const boolean enable_config_cmd = true;
 
-const byte PRESS_CMD = 0x01;
-const byte TYPE_CMD = 0x02;
+const byte WRITE_CMD = 0x01;
+const byte PRESS_CMD = 0x02;
+const byte RELEASE_ALL_CMD = 0x03;
 const byte CONFIG_CMD = 0xFF;
 
 unsigned int local_port = 8888; 
@@ -126,80 +133,69 @@ void setup() {
     Serial.println("dumping firmware info via keyboard");
   }
 
-  //EEPROM.write(eeprom_addr,42);
- 
-  const char HP355_COLON = 0x3E;
-  //KEY_RETURN, 0xB0, 176
-  const char HP355_RETURN = 0xB0;
-  const char HP355_HYPHEN = 0x2F;
-
-  // character 'z' is generating keyboard event 'y'
-  Keyboard.println("kezboard firmware\0");
-  Keyboard.write(HP355_RETURN);
-  delay(10);
-  Keyboard.print("version\0");
-  Keyboard.write(HP355_COLON);
-  Keyboard.write(' ');
-  Keyboard.print(version);
-  Keyboard.write(HP355_RETURN);
-  delay(10);
-  Keyboard.print("date\0");
-  Keyboard.write(HP355_COLON);
-  Keyboard.write(' ');
-  Keyboard.print(date);
-  Keyboard.write(HP355_RETURN);
-  delay(10);
-  // character '?' is generating keyboard event '_'
-  Keyboard.print("enable?config?cmd\0");
-  Keyboard.write(HP355_COLON);
-  Keyboard.write(' ');
-  if (enable_config_cmd) {
-    Keyboard.print("true");
-  } else {
-    Keyboard.print("false");
+  if (greeting) {
+    //EEPROM.write(eeprom_addr,42);
+   
+    const char HP355_COLON = 0x3E;
+    //KEY_RETURN, 0xB0, 176
+    const char HP355_RETURN = 0xB0;
+    const char HP355_HYPHEN = 0x2F;
+  
+    // character 'z' is generating keyboard event 'y'
+    Keyboard.println("kezboard firmware\0");
+    Keyboard.write(HP355_RETURN);
+    delay(10);
+    Keyboard.print("version\0");
+    Keyboard.write(HP355_COLON);
+    Keyboard.write(' ');
+    Keyboard.print(version);
+    Keyboard.write(HP355_RETURN);
+    delay(10);
+    Keyboard.print("date\0");
+    Keyboard.write(HP355_COLON);
+    Keyboard.write(' ');
+    Keyboard.print(date);
+    Keyboard.write(HP355_RETURN);
+    delay(10);
+    // character '?' is generating keyboard event '_'
+    Keyboard.print("enable?config?cmd\0");
+    Keyboard.write(HP355_COLON);
+    Keyboard.write(' ');
+    if (enable_config_cmd) {
+      Keyboard.print("true");
+    } else {
+      Keyboard.print("false");
+    }
+    Keyboard.write(HP355_RETURN);
+    delay(10);
+    Keyboard.print("ip\0");
+    Keyboard.write(HP355_COLON);
+    Keyboard.print(" 10.176.18.\0");
+    Keyboard.print(ip_end);
+    Keyboard.write(HP355_RETURN);
+    delay(10);
+    Keyboard.print("mac\0");
+    Keyboard.write(HP355_COLON);
+    Keyboard.print(" DE\0");
+    Keyboard.write(HP355_HYPHEN);
+    Keyboard.print("AD\0");
+    Keyboard.write(HP355_HYPHEN);
+    Keyboard.print("BE\0");
+    Keyboard.write(HP355_HYPHEN);
+    Keyboard.print("EF\0");
+    Keyboard.write(HP355_HYPHEN);
+    Keyboard.print("FE\0");
+    Keyboard.write(HP355_HYPHEN);
+    {
+      char pp_ip_end[2];
+      sprintf(pp_ip_end, "%02X", ip_end);
+      Keyboard.print(pp_ip_end);
+    }
+    Keyboard.write(HP355_RETURN);
+    delay(10);
   }
-  Keyboard.write(HP355_RETURN);
-  delay(10);
-  Keyboard.print("ip\0");
-  Keyboard.write(HP355_COLON);
-  Keyboard.print(" 10.176.18.\0");
-  Keyboard.print(ip_end);
-  Keyboard.write(HP355_RETURN);
-  delay(10);
-  Keyboard.print("mac\0");
-  Keyboard.write(HP355_COLON);
-  Keyboard.print(" DE\0");
-  Keyboard.write(HP355_HYPHEN);
-  Keyboard.print("AD\0");
-  Keyboard.write(HP355_HYPHEN);
-  Keyboard.print("BE\0");
-  Keyboard.write(HP355_HYPHEN);
-  Keyboard.print("EF\0");
-  Keyboard.write(HP355_HYPHEN);
-  Keyboard.print("FE\0");
-  Keyboard.write(HP355_HYPHEN);
-  {
-    char pp_ip_end[2];
-    sprintf(pp_ip_end, "%02X", ip_end);
-    Keyboard.print(pp_ip_end);
-  }
-  Keyboard.write(HP355_RETURN);
-  delay(10);
-  /*
-  for (byte c=0; c<=254; c++) {
-    Serial.println(c, HEX);
-    Keyboard.println(c, HEX);
-    Keyboard.write(c);
-    Keyboard.write(0xB0);
-    delay(1000);
-  }
-  */
-  //Keyboard.write(0xB0);
-  //Keyboard.println("1234567890ß´qwertzuiopü+asdfghjklöä#<yxcvbnm,.-\0");
-  //Keyboard.println("!?§$%&/()=??QWERTZUIOPÜ*ASDFGHJKLÖÄ'>YXCVBNM;:_\0");
-
+  
 }
-
 
 
 void loop() {
@@ -207,21 +203,35 @@ void loop() {
   int packet_size = read_udp();
   if (packet_size != 0) {
     switch (byte(packet_buffer[0])) {
+      case WRITE_CMD:
+        if (debug) {
+          dump_ts_serial();
+          Serial.print(" ");
+          Serial.println("processing WRITE_CMD type packet");
+        }
+        if (!mute) {
+          Keyboard.write(packet_buffer[1]);
+        }
+        break;
       case PRESS_CMD:
         if (debug) {
           dump_ts_serial();
           Serial.print(" ");
-          Serial.println("processing PRESS_CMD type packet");
+          Serial.println("processing PRESS_CMD type packet");    
         }
-        Keyboard.write(packet_buffer[1]);
+        if (!mute) {
+          Keyboard.press(packet_buffer[1]);
+        }
         break;
-      case TYPE_CMD:
+      case RELEASE_ALL_CMD:
         if (debug) {
           dump_ts_serial();
           Serial.print(" ");
-          Serial.println("processing TYPE_CMD type packet");    
+          Serial.println("processing RELEASE_ALL_CMD type packet");    
         }
-        Keyboard.println(packet_content);
+        if (!mute) {
+          Keyboard.releaseAll();
+        }
         break;
       case CONFIG_CMD:
         if (enable_config_cmd) {
@@ -280,9 +290,14 @@ int read_udp() {
       Serial.print("received packet '");
       
       for (int i=0; i < packet_size; i++) {
-        char pp_byte[2];
+        if (i!=0) {
+          Serial.print(",");
+        }
+        char pp_byte[3];
         sprintf(pp_byte, "%02X", packet_buffer[i]);
-        Serial.print(pp_byte);
+        //Serial.print(pp_byte);
+        //Serial.print(packet_buffer[i], HEX);
+        Serial.print("yy");
       }
       Serial.print("' [");
       IPAddress remote_ip = Udp.remoteIP();
@@ -298,18 +313,18 @@ int read_udp() {
       Serial.print(packet_size);
       Serial.println(" bytes]");
     }
-    if (packet_size > 24 or packet_size == 1 or contains_0x00 == 1) {
+    if (packet_size > 24 or packet_size == 0 or contains_0x00 == 1) {
       if (debug) {
         if (packet_size > 24) {
           dump_ts_serial();
           Serial.print(" ");
           Serial.println("ignoring packet since size is greater 24 bytes");
         }
-        if (packet_size == 1) {
+        if (packet_size == 0) {
           dump_ts_serial();
           Serial.print(" ");
-          Serial.println("ignoring packet since size is 1 byte");
-        }
+          Serial.println("ignoring packet since size is 0 byte");
+        }  
         if (contains_0x00 == 1) {
           dump_ts_serial();
           Serial.print(" ");
@@ -319,10 +334,10 @@ int read_udp() {
       packet_size = 0;
     } else { 
       switch (byte(packet_buffer[0])) {
+        case RELEASE_ALL_CMD:
+          break;
         case PRESS_CMD:
-          break;
-        case TYPE_CMD:
-          break;
+        case WRITE_CMD:
         case CONFIG_CMD:
           if (packet_size < 2) {
             if (debug) {

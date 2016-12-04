@@ -1,3 +1,11 @@
+build:
+dmesg | tail
+-> /dev/ttyACM0
+pwd 
+-> arduino/keyboard
+arduino &
+
+
 description:
 - two laptops (control + playback)
 - playback laptops has dual boot environment (windows 10+ubuntu 16.04.1)
@@ -24,3 +32,35 @@ example sketch:
  CTRL-ALT-DEL followed by ALT-l
  On Debian:
  CTRL-ALT-DEL, and ENTER
+
+keyboard firmware
+
+void setup() {
+  Keyboard.begin();
+}
+
+
+void loop() {
+
+  delay(1000);
+
+  // CTRL-ALT-DEL:
+  Keyboard.press(KEY_LEFT_CTRL);
+  Keyboard.press(KEY_LEFT_ALT);
+  Keyboard.press(KEY_DELETE);
+  delay(100);
+  Keyboard.releaseAll();
+  //ALT-l:
+  delay(2000);
+  Keyboard.press(KEY_LEFT_ALT);
+  Keyboard.press('l');
+  Keyboard.releaseAll();
+  // ENTER
+  Keyboard.write(KEY_RETURN);
+   
+  // do nothing:
+  while (true);
+}
+
+
+
